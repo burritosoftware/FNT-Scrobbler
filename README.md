@@ -1,12 +1,10 @@
-# Icecast Scrobbler
+# Friday Night Tracks Scrobbler
 ![Icons](https://skillicons.dev/icons?i=py)
 
-[![wakatime](https://wakatime.com/badge/github/burritosoftware/Icecast-Scrobbler.svg)](https://wakatime.com/badge/github/burritosoftware/Icecast-Scrobbler) [![Last updated](https://img.shields.io/github/last-commit/burritosoftware/Icecast-Scrobbler/master?logo=github&label=last%20updated)](https://github.com/burritosoftware/Icecast-Scrobbler/commits/master)
+[![wakatime](https://wakatime.com/badge/github/burritosoftware/FNT-Scrobbler.svg)](https://wakatime.com/badge/github/burritosoftware/FNT-Scrobbler) [![Last updated](https://img.shields.io/github/last-commit/burritosoftware/FNT-Scrobbler/master?logo=github&label=last%20updated)](https://github.com/burritosoftware/FNT-Scrobbler/commits/master)
 
-An Icecast internet radio scrobbler for Last.fm, primarily designed around [Friday Night Tracks](https://fridaynighttracks.com), that includes many quality-of-life features for the monthly live radio show.
-
-> [!WARNING]  
-> This is not pretty and I would like to make it a bit more convenient than running a Python script. As a constant work-in-progress, expect bugs!
+A scrobbler for Last.fm designed for [Friday Night Tracks](https://fridaynighttracks.com), that includes quality-of-life features for the monthly live radio show.  
+This is a drop-in replacement for my now deprecated [Icecast Scrobbler](https://github.com/burritosoftware/Icecast-Scrobbler) (you can just copy the .env file to this, install dependencies and run! Although you should probably take a look at [`.env-example`](.env-example) since there's new options now).
 
 ## Get It Running
 1. Make sure you have Python installed.
@@ -15,8 +13,6 @@ An Icecast internet radio scrobbler for Last.fm, primarily designed around [Frid
 pip install -U -r requirements.txt
 ```
 3. Duplicate `.env-example` to `.env`, and add a Last.fm API key and secret from https://www.last.fm/api/account/create.
-> [!NOTE]  
-> The configuration is, by default, set to work best with xbn.fm/Friday Night Tracks and requires no further configuration. However, if you are using an Icecast stream that only outputs one source, set `ICECAST_MULTI_SOURCE` to `False`. Additionally, if you don't want any tag removal, set the `TAG_REGEX` to `(?!x)x` to disable it.
 ```
 cp .env-example .env
 nano .env
@@ -27,4 +23,4 @@ python3 scrobble.py
 ```
 
 ## Contributing
-All contributions welcome! I am primarily using this for Friday Night Tracks, so while I can assist you with using this for other Icecast streams, I'm primarily making sure bugs are ironed out for FNT. However, if you're having issues either way, please open an issue and I'll try to do my best!
+All contributions welcome! And if you haven't, you should catch Friday Night Tracks live (check the website at https://fridaynighttracks.com for when it's live next :3)
