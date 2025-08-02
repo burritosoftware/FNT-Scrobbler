@@ -45,7 +45,7 @@ def scheduleScrobble(data):
     # Lookup the track
     track = lastfm.get_track(artist, title)
 
-    if track:
+    if track != None:
         track_length = track.get_duration()
         # Must convert milliseconds to seconds
         track_length = track_length / 1000

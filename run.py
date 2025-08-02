@@ -18,7 +18,7 @@ async def receiveNowPlayingMessages(data) -> None:
   """
   logger.debug("Received /nowplaying update")
   logger.debug(f"Raw data: {data}")
-  await asyncio.to_thread(scheduleScrobble(data))
+  asyncio.create_task(asyncio.to_thread(scheduleScrobble, data))
 
 @sio.on('update', namespace="/broadcast/fnt")
 async def receiveBroadcastMessages(data):
