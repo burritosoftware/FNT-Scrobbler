@@ -2,6 +2,9 @@ from utils.session import getLastFMNetwork
 import re
 import time
 import logging
+from os import getenv
+from dotenv import load_dotenv
+load_dotenv()
 from pylast import WSError
 
 logger = logging.getLogger(__name__)
@@ -12,45 +15,49 @@ def scheduleScrobble(data):
     """
     Schedule a scrobble based on the provided data.
     """
-    # Split artist and song title by dash
-    # E.g. Gloria Tells — Heartbreaker (Instrumental Version)
-
     # Split the data into artist and title
     artist, title = data.split(' — ', 1)
 
-    # Strip data using our tag regex
-    fnt_regex = r"\(Original Mix\)|\(Extended Mix\)|\[Explicit\]|\[FNT.*?Edit\]"
-    pattern = fnt_regex
+    # Compile our tag regex for filtering
+    fnt_regex = (
+      r"\(Original Mix\)"        # (Original Mix)
+      r"|\(Extended Mix\)"       # (Extended Mix)
+      r"|\[Explicit\]"           # [Explicit]
+      r"|\[FNT.*?Edit\]"         # [FNT … Edit]
+      r"|\(Paradox.*?Edit\)"     # (Paradox … Edit)
+    )
+    if (getenv("TAG_REGEX")):
+        pattern = getenv("TAG_REGEX")
+    else:
+        pattern = fnt_regex
     pattern = re.compile(pattern, re.IGNORECASE)
 
-    # Remove matching substrings
-    logger.debug(f"Original title: {title}")
+    # Remove matching tags
+    logger.debug(f"[scrobbler] Original title: {title}")
     title = re.sub(pattern, "", title).strip()
-    logger.debug(f"Stripped title: {title}")
+    logger.debug(f"[scrobbler] Stripped title: {title}")
 
-    # First try to obtain an album so we can scrobble that
+    # Get the track from Last.fm
     track = lastfm.get_track(artist, title)
     track_in_lastfm = True
 
-    # We will try to get the album: if fails, track is not in Last.fm
+    # Try to get the album: if fails, the track isn't on Last.fm
     try:
       album = track.get_album()
       album_title = album.get_name(True) if album else None
-    except WSError as e:
+    except WSError:
       track_in_lastfm = False
-      logger.error(f"Error fetching album info: {e}")
       album_title = None
 
-    # Then we can update the now playing status,
+    # Update the now playing status (done as soon as the song starts playing)
     lastfm.update_now_playing(artist=artist, title=title, album=album_title)
 
-    # Then we should lookup the song length, and follow the scrobble conditions
-    # We should schedule a scrobble with asyncio by adding a task to scrobble,
-    # only when the following conditions are met:
+    # Then we should lookup the song length, and follow the Last.fm scrobble conditions
+    # We should schedule a scrobble only when the following conditions are met:
     # 1. The track must be longer than 30 seconds
     # 2. *And* the track has been played for at least half its duration, or for 4 minutes (whichever occurs earlier)
     # As soon as these conditions are met, the scrobble should fire. If 1 is good, and we calculate the shorter time for 2,
-    # then schedule the scrobble for the number 2 time with asyncio
+    # then schedule the scrobble for the number 2 time
 
     track_length = 0
 
@@ -60,17 +67,11 @@ def scheduleScrobble(data):
       if track_length == 0.0:
         track_length = 240
     else:
-      track_length = 240
-    print(f"Track length: {track_length}")
-    
-    # First check if it's longer than 30, if not we won't even send a task so if 30
-    # Then, if it is longer than 30, compute either if half the duration or 4 minutes is shorter,
-    # then schedule a scrobble task with that delay
+      track_length = 240 # 2 mins = 240/2
 
     if track_length > 30:
-      print("Scrobbling soon")
       delay = min(track_length / 2, 240)  # Half the duration or 4 minutes
-      logger.info(f"Scheduling scrobble for {title} in {delay} seconds")
+      logger.info(f"[scrobbler] SCHEDULING: {artist} - {title} in {delay} seconds")
       time.sleep(delay)
       lastfm.scrobble(artist=artist, title=title, timestamp=int(time.time()), album=album_title)
-      logger.info(f"Scrobbled Artist: {artist}, Title: {title}, Album: {album_title}")
+      logger.info(f"[scrobbler] SCROBBLED: {artist} - {title}")
