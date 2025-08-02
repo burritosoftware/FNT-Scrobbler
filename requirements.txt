@@ -1,0 +1,3 @@
+pylast
+python-socketio<6 # To ensure Engine 4 support
+python-dotenv
