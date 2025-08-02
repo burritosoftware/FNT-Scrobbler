@@ -3,7 +3,7 @@ import sys
 from dotenv import load_dotenv
 from os import getenv
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     force=True,
     stream=sys.stdout,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
