@@ -21,7 +21,7 @@ sio = socketio.AsyncClient()
 scrobble_tasks: set[asyncio.Task] = set()
 
 @sio.on('update', namespace="/nowplaying")
-async def receiveNowPlayingMessages(data) -> None:
+async def receiveNowPlaying(data) -> None:
   """
   Receiver for /nowplaying messages from xbn. When a song is received,
   it will create a new thread to process, schedule, and scrobble the song.
@@ -35,10 +35,32 @@ async def receiveNowPlayingMessages(data) -> None:
   scrobble_tasks.add(task)
   task.add_done_callback(scrobble_tasks.discard)
 
+@sio.on('backlog', namespace='/nowplaying')
+async def receiveBacklog(track_list):
+    print(f"received {len(track_list)} tracks")
+    for t in track_list:
+        print(f"• {t['name']}  (timestamp {t['date']})")
+
 @sio.on('update', namespace="/broadcast/fnt")
 async def receiveBroadcastMessages(data):
   # Heck yeah this is where the code goes
   logger.info("/broadcast/fnt namespace")
+  logger.info(data)
+  # data = {'onair': False, 'testing': False}
+  # if onair is False then lets shutdown
+  if not data.get("onair", False):
+      await shutdown()
+
+@sio.on('update', namespace="/notifications/fnt")
+async def receiveNotificationMessages(data):
+  # Heck yeah this is where the code goes
+  logger.info("/notifications/fnt namespace")
+  logger.info(data)
+
+@sio.on('update', namespace="/settings/fnt")
+async def receiveNotificationMessages(data):
+  # Heck yeah this is where the code goes
+  logger.info("/settings/fnt namespace")
   logger.info(data)
 
 @sio.event
@@ -78,6 +100,8 @@ async def shutdown() -> None:
 
         # Let them finish (or gather exceptions) before exiting
         await asyncio.gather(*pending, return_exceptions=True)
+
+    exit()
 
 async def main() -> None:
     try:
