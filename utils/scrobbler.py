@@ -1,16 +1,15 @@
 from utils.session import getLastFMNetwork
 import re
 import time
-import asyncio
 import logging
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 lastfm = getLastFMNetwork()
 
-async def scheduleScrobble(data):
+def scheduleScrobble(data):
     """
-    Schedule a scrobble  based on the provided data.
+    Schedule a scrobble based on the provided data.
     """
     # Split artist and song title by dash
     # E.g. Gloria Tells — Heartbreaker (Instrumental Version)
@@ -24,7 +23,9 @@ async def scheduleScrobble(data):
     pattern = re.compile(pattern, re.IGNORECASE)
 
     # Remove matching substrings
-    # title = re.sub(pattern, "", title).strip()
+    logger.debug(f"Original title: {title}")
+    title = re.sub(pattern, "", title).strip()
+    logger.debug(f"Stripped title: {title}")
 
     # First try to obtain an album so we can scrobble that
     album = lastfm.get_album(artist, title)
@@ -47,16 +48,21 @@ async def scheduleScrobble(data):
     if track:
         track_length = track.get_duration()
         # Must convert milliseconds to seconds
-        track_length = int(track_length / 1000)
+        track_length = track_length / 1000
+        if track_length == 0.0:
+           # The track is 0.0 likely because it isn't indexed
+           # We'll pass 240 to ensure we will get a scrobble
+           # at 2 minutes of playtime
+           track_length = 240
         print(f"Track length: {track_length}")
     
     # First check if it's longer than 30, if not we won't even send a task so if 30
     # Then, if it is longer than 30, compute either if half the duration or 4 minutes is shorter,
     # then schedule a scrobble task with that delay
 
-    if track_length > 30:
+    if track_length > 30.0:
       delay = min(track_length / 2, 240)  # Half the duration or 4 minutes
       print(f"Scheduling scrobble in {delay} seconds")
-      await asyncio.sleep(delay)
+      time.sleep(delay)
       lastfm.scrobble(artist=artist, title=title, timestamp=int(time.time()), album=album_title)
       print(f"Scrobbled Artist: {artist}, Title: {title}, Album: {album_title}")

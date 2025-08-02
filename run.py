@@ -7,19 +7,21 @@ from utils.scrobbler import scheduleScrobble
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 sio = socketio.AsyncClient()
 
 @sio.on('update', namespace="/nowplaying")
-async def receiveNowPlayingUpdates(data) -> None:
+async def receiveNowPlayingMessages(data) -> None:
   """
-  Listener for /nowplaying updates from xbn. When received, it will
-  pass the data onto the processor task to handle scrobbling.
+  Listener for /nowplaying messages from xbn. When a song is received,
+  it will create a new thread to process, schedule, and scrobble the song.
   """
-  await scheduleScrobble(data)
+  logger.debug("Received /nowplaying update")
+  logger.debug(f"Raw data: {data}")
+  await asyncio.to_thread(scheduleScrobble(data))
 
 @sio.on('update', namespace="/broadcast/fnt")
-async def receiveBroadcastUpdates(data):
+async def receiveBroadcastMessages(data):
   # Heck yeah this is where the code goes
   logger.info("/broadcast/fnt namespace")
   logger.info(data)
