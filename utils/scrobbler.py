@@ -24,6 +24,7 @@ def scheduleScrobble(data):
       r"|\(Extended Mix\)"       # (Extended Mix)
       r"|\[Explicit\]"           # [Explicit]
       r"|\[FNT.*?Edit\]"         # [FNT … Edit]
+      r"|\[FNT.*?Remaster\]"     # [FNT … Remaster]
       r"|\(Paradox.*?Edit\)"     # (Paradox … Edit)
     )
     if (getenv("TAG_REGEX")):
