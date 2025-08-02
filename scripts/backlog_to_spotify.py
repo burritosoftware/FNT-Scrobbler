@@ -2,8 +2,8 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import time
 import json
-client_id = "f7941a5690914fb1a757356a717a0f6e"
-client_secret = "90be84bf7aec49128e7383ddeb38d274"
+client_id = ""
+client_secret = ""
 scope = "ugc-image-upload,playlist-modify-private,"
 redirect_uri="http://127.0.0.1:9090"
 
