@@ -20,8 +20,8 @@ def scheduleScrobble(data):
 
     # Compile our tag regex for filtering
     fnt_regex = (
-      r"\(Original Mix\)"        # (Original Mix)
-      r"|\(Extended Mix\)"       # (Extended Mix)
+      r"\(Original.*?Mix\)"      # (Original … Mix)
+      r"|\(Extended.*?Mix\)"     # (Extended … Mix)
       r"|\[Explicit\]"           # [Explicit]
       r"|\[FNT.*?Edit\]"         # [FNT … Edit]
       r"|\[FNT.*?Remaster\]"     # [FNT … Remaster]
