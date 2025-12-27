@@ -28,10 +28,11 @@ async def receiveNowPlaying(data) -> None:
   """
   logger.debug("Received /nowplaying update")
   logger.debug(f"Raw data: {data}")
+  music_info = data['title']
   # create_task: disassociate it from receiveNowPlayingMessages
   # to_thread: run in a separate thread to avoid blocking
   logger.info(f"[receiver] QUEUED: {data}")
-  task = asyncio.create_task(asyncio.to_thread(scheduleScrobble, data), name=data)
+  task = asyncio.create_task(asyncio.to_thread(scheduleScrobble, music_info), name=music_info)
   scrobble_tasks.add(task)
   task.add_done_callback(scrobble_tasks.discard)
 
@@ -39,7 +40,7 @@ async def receiveNowPlaying(data) -> None:
 async def receiveBacklog(track_list):
     print(f"received {len(track_list)} tracks")
     for t in track_list:
-        print(f"• {t['name']}  (timestamp {t['date']})")
+        print(f"• {t['title']}  (timestamp {t['date']})")
 
 @sio.on('update', namespace="/broadcast/fnt")
 async def receiveBroadcastMessages(data):
@@ -108,6 +109,9 @@ async def main() -> None:
         await startup()
     finally:
         await shutdown()
+
+if sys.platform == 'win32':
+	asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 if __name__ == "__main__":
     try:
