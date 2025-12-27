@@ -23,6 +23,7 @@ def scheduleScrobble(data):
       r"\(Original.*?Mix\)"      # (Original … Mix)
       r"|\(Extended.*?Mix\)"     # (Extended … Mix)
       r"|\[Explicit\]"           # [Explicit]
+      r"|\[Clean\]"              # [Clean]
       r"|\[FNT.*?Edit\]"         # [FNT … Edit]
       r"|\[FNT.*?Remaster\]"     # [FNT … Remaster]
       r"|\(Paradox.*?Edit\)"     # (Paradox … Edit)
