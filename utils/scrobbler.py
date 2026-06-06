@@ -11,14 +11,7 @@ logger = logging.getLogger(__name__)
 
 lastfm = getLastFMNetwork()
 
-def scheduleScrobble(data):
-    """
-    Schedule a scrobble based on the provided data.
-    """
-    # Split the data into artist and title
-    artist, title = data.split(' — ', 1)
-
-    # Compile our tag regex for filtering
+def _getTagPattern():
     fnt_regex = (
       r"\(Original.*?Mix\)"      # (Original … Mix)
       r"|\(Extended.*?Mix\)"     # (Extended … Mix)
@@ -28,22 +21,20 @@ def scheduleScrobble(data):
       r"|\[FNT.*?Remaster\]"     # [FNT … Remaster]
       r"|\(Paradox.*?Edit\)"     # (Paradox … Edit)
     )
-    if (getenv("TAG_REGEX")):
-        pattern = getenv("TAG_REGEX")
-    else:
-        pattern = fnt_regex
-    pattern = re.compile(pattern, re.IGNORECASE)
+    pattern = getenv("TAG_REGEX") or fnt_regex
+    return re.compile(pattern, re.IGNORECASE)
 
-    # Remove matching tags
+def parseTrack(data):
+    artist, title = data.split(' — ', 1)
+    pattern = _getTagPattern()
+
     logger.debug(f"[scrobbler] Original title: {title}")
     title = re.sub(pattern, "", title).strip()
     logger.debug(f"[scrobbler] Stripped title: {title}")
 
-    # Get the track from Last.fm
     track = lastfm.get_track(artist, title)
     track_in_lastfm = True
 
-    # Try to get the album: if fails, the track isn't on Last.fm
     try:
       album = track.get_album()
       album_title = album.get_name(True) if album else None
@@ -51,15 +42,18 @@ def scheduleScrobble(data):
       track_in_lastfm = False
       album_title = None
 
-    # Update the now playing status (done as soon as the song starts playing)
-    lastfm.update_now_playing(artist=artist, title=title, album=album_title)
+    return artist, title, album_title, track, track_in_lastfm
 
-    # Then we should lookup the song length, and follow the Last.fm scrobble conditions
-    # We should schedule a scrobble only when the following conditions are met:
-    # 1. The track must be longer than 30 seconds
-    # 2. *And* the track has been played for at least half its duration, or for 4 minutes (whichever occurs earlier)
-    # As soon as these conditions are met, the scrobble should fire. If 1 is good, and we calculate the shorter time for 2,
-    # then schedule the scrobble for the number 2 time
+def sendNowPlaying(data):
+    artist, title, album_title, _, _ = parseTrack(data)
+    lastfm.update_now_playing(artist=artist, title=title, album=album_title)
+    logger.info(f"[scrobbler] NOW PLAYING: {artist} - {title}")
+
+def scheduleScrobble(data):
+    """
+    Schedule a scrobble based on the provided data.
+    """
+    artist, title, album_title, track, track_in_lastfm = parseTrack(data)
 
     track_length = 0
 

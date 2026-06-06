@@ -15,10 +15,35 @@ logger.setLevel(getenv("LOG_LEVEL", "INFO"))
 
 import asyncio
 import socketio
-from utils.scrobbler import scheduleScrobble
+from utils.scrobbler import scheduleScrobble, sendNowPlaying
 
 sio = socketio.AsyncClient()
 scrobble_tasks: set[asyncio.Task] = set()
+now_playing_task: asyncio.Task | None = None
+
+NOW_PLAYING_INTERVAL = 180  # 3 minutes
+
+async def repeatNowPlaying(music_info: str) -> None:
+    try:
+        await asyncio.to_thread(sendNowPlaying, music_info)
+        while True:
+            await asyncio.sleep(NOW_PLAYING_INTERVAL)
+            await asyncio.to_thread(sendNowPlaying, music_info)
+    except asyncio.CancelledError:
+        logger.debug(f"[nowplaying] CANCELLED: {music_info}")
+        raise
+
+async def startNowPlaying(music_info: str) -> None:
+    global now_playing_task
+
+    if now_playing_task and not now_playing_task.done():
+        now_playing_task.cancel()
+        try:
+            await now_playing_task
+        except asyncio.CancelledError:
+            pass
+
+    now_playing_task = asyncio.create_task(repeatNowPlaying(music_info), name=f"nowplaying:{music_info}")
 
 @sio.on('update', namespace="/nowplaying")
 async def receiveNowPlaying(data) -> None:
@@ -29,9 +54,10 @@ async def receiveNowPlaying(data) -> None:
   logger.debug("Received /nowplaying update")
   logger.debug(f"Raw data: {data}")
   music_info = data['title']
-  # create_task: disassociate it from receiveNowPlayingMessages
-  # to_thread: run in a separate thread to avoid blocking
   logger.info(f"[receiver] QUEUED: {data}")
+
+  await startNowPlaying(music_info)
+
   task = asyncio.create_task(asyncio.to_thread(scheduleScrobble, music_info), name=music_info)
   scrobble_tasks.add(task)
   task.add_done_callback(scrobble_tasks.discard)
@@ -88,6 +114,14 @@ async def shutdown() -> None:
     logger.info("[socket] SHUTDOWN: Shutting down...")
     if sio.connected:
         await sio.disconnect()
+
+    global now_playing_task
+    if now_playing_task and not now_playing_task.done():
+        now_playing_task.cancel()
+        try:
+            await now_playing_task
+        except asyncio.CancelledError:
+            pass
     
     # scrobble_tasks is the set you’ve been maintaining
     pending = [t for t in scrobble_tasks if not t.done()]
